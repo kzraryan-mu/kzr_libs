@@ -1,3 +1,5 @@
+# pip install -r https://raw.githubusercontent.com/snowflakedb/snowflake-connector-python/v2.5.0/tested_requirements/requirements_36.reqs
+# pip install snowflake-connector-python==2.5.0
 from numpy.distutils.fcompiler import none
 import json
 import snowflake.connector
@@ -5,27 +7,49 @@ from snowflake.connector import SnowflakeConnection
 from snowflake.connector.pandas_tools import write_pandas
 import timeit
 import pandas as pd
+import pyarrow
+from snowflake.sqlalchemy import URL
+from sqlalchemy import create_engine
 
 connection: SnowflakeConnection = none
-schema = 'DEV'
-database = 'PCORNET_CDM'
+path = ""
+role = ""
+warehouse = ""
+database = ""
+schema = ""
+
+
+def get_engine():
+    with open(path, "r") as f:
+        cred = json.load(f)
+    engine = create_engine(URL(
+        user=cred['user'],
+        password=cred['password'],
+        account=cred['account'],
+        role=role,
+        warehouse=warehouse,
+        database=database,
+        schema=schema
+    ))
+    conn = engine.connect()
+    return engine
 
 
 def connect():
     global connection
-    with open("/Users/mrkfw/OneDrive - University of Missouri/PhD/snowflake/snow_cred_kzr.json", "r") as f:
+    with open(path, "r") as f:
         cred = json.load(f)
     connection = snowflake.connector.connect(
         user=cred['user'],
         password=cred['password'],
         account=cred['account'],
-        role='ACCOUNTADMIN',
-        warehouse='PCORNETCDM_EDC',
+        role=role,
+        warehouse=warehouse,
         database=database,
         schema=schema,
         paramstyle='qmark'
     )
-    print("relaoded")
+    print("connected!")
 
 
 def execute(statement):
@@ -44,6 +68,7 @@ def disconnect():
 
 
 def select_m(statement):
+    print(timeit.timeit("pass"))
     cs = connection.cursor()
     df = none
     try:
