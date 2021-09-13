@@ -54,6 +54,30 @@ def select_m(statement):
         return df
 
 
+def select_with_structure(statement):
+    start = time.time() * 1000
+    cs = connection.cursor()
+    df = none
+    ddl = """
+        create table 
+    """
+    try:
+        cs.execute(statement)
+        # print(time.time() * 1000 - start)
+
+        cols = [field[0] for field in cs.description]
+        print(cs.description)
+        rows = cs.fetchall()
+        # print(time.time() * 1000 - start)
+        df = pd.DataFrame(rows, columns=cols, dtype=str)
+        # print(time.time() * 1000 - start)
+    except Exception as e:
+        print(e)
+    finally:
+        cs.close()
+        # print(time.time() * 1000 - start)
+        return df
+
 def select_a(statement):
     start = time.time() * 1000
     cs = connection.cursor()

@@ -58,9 +58,11 @@ def execute(statement):
         cs.execute(statement)
     except Exception as e:
         print(e)
+        return False
     finally:
         if not cs.messages:
             print("Executed")
+            return True
 
 
 def disconnect():
