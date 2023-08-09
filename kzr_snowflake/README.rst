@@ -20,7 +20,7 @@ Snowflake helper library
 
 
 * Free software: GNU General Public License v3
-* Documentation: https://kzr-snowflake.readthedocs.io.
+* Documentation: https://github.com/kzraryan-mu/kzr_snowflake
 
 
 Features
