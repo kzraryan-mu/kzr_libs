@@ -1,13 +1,9 @@
-# pip install -r https://raw.githubusercontent.com/snowflakedb/snowflake-connector-python/v2.5.0/tested_requirements/requirements_36.reqs
-# pip install snowflake-connector-python==2.5.0
 from numpy.distutils.fcompiler import none
 import json
 import snowflake.connector
 from snowflake.connector import SnowflakeConnection
 from snowflake.connector.pandas_tools import write_pandas
-import timeit
 import pandas as pd
-import pyarrow
 from snowflake.sqlalchemy import URL
 from sqlalchemy import create_engine
 import sqlparse
@@ -21,6 +17,12 @@ role = ""
 warehouse = ""
 database = ""
 schema = ""
+log = False
+
+
+def print_log(str_val):
+    if log:
+        print(str_val)
 
 
 def get_engine():
@@ -66,7 +68,7 @@ def connect(externalbrowser: bool = False):
             paramstyle='qmark'
         )
 
-    print("connected!")
+    print_log("connected!")
 
 
 def execute(statement):
@@ -74,11 +76,11 @@ def execute(statement):
         try:
             cs.execute(statement)
         except Exception as e:
-            print(e)
+            print_log(e)
             return False
         finally:
             if not cs.messages:
-                print("Executed")
+                print_log("Executed")
                 return True
     return False
 
@@ -88,17 +90,15 @@ def disconnect():
 
 
 def select_m(statement):
-    print(timeit.timeit("pass"))
     cs = connection.cursor()
     df = none
     try:
         cs.execute(statement)
         df = cs.fetch_pandas_all()
     except Exception as e:
-        print(e)
+        print_log(e)
     finally:
         cs.close()
-        print(timeit.timeit("pass"))
         return df
 
 
@@ -109,10 +109,9 @@ def select_one(statement):
         cs.execute(statement)
         value = cs.fetchone()
     except Exception as e:
-        print(e)
+        print_log(e)
     finally:
         cs.close()
-        print(timeit.timeit("pass"))
         return value
 
 
@@ -121,21 +120,20 @@ def insert_m(statement, params):
     try:
         cs.executemany(statement, params)
     except Exception as e:
-        print(e)
+        print_log(e)
     finally:
         cs.close()
 
 
 def select_into_df(statement):
     try:
-        df = pd.read_sql(
+        return pd.read_sql(
             statement,
             connection
         )
     except Exception as e:
-        print(e)
-    finally:
-        return df
+        print_log(e)
+        return none
 
 
 def insert_df(table_name, df):
@@ -147,10 +145,10 @@ def insert_df(table_name, df):
             table_name
         )
     except Exception as e:
-        print('error: {}'.format(e))
+        print_log('error: {}'.format(e))
     finally:
         if success:
-            print(
+            print_log(
                 'success = ' + str(success)
                 + '\nnchunks = ' + str(nchunks)
                 + '\nnrows = ' + str(nrows)
@@ -262,7 +260,7 @@ def create_etl_from_source_code(folder_path, etl_table_name, add_datetime=False)
                     table_details_list.append(td.copy())
             else:
                 # table_details_list.append(td)
-                print('skip folders')
+                print_log('skip folders')
 
         # convert the list to a Pandas DataFrame
         etl_df = pd.DataFrame([vars(table_details) for table_details in table_details_list])
@@ -293,7 +291,7 @@ def create_etl_from_source_code(folder_path, etl_table_name, add_datetime=False)
         insert_df(etl_table_name, etl_df)
 
     except Exception as e:
-        print(e)
+        print_log(e)
 
 
 def create_task(
@@ -312,11 +310,11 @@ def create_task(
 ):
     if (warehouse and user_task_managed_initial_warehouse_size) or (
         not warehouse and not user_task_managed_initial_warehouse_size):
-        print('Use one type of warehouse option!')
+        print_log('Use one type of warehouse option!')
         return False
 
     if (schedule and after) or (not schedule and not after):
-        print('Choose either task is after another task or provide schedule!')
+        print_log('Choose either task is after another task or provide schedule!')
         return False
 
     statement = f"CREATE TASK {name}" if not replace else f"CREATE OR REPLACE TASK {name}"
@@ -332,7 +330,7 @@ def create_task(
         statement += f"\nWHEN\n\t{when}"
     statement += f"\nAS\n\t{sql};"
 
-    if print_statement: print(statement)
+    if print_statement: print_log(statement)
     return execute(statement)
 
 
@@ -343,7 +341,7 @@ def float_max_precision_and_scale(series):
         max_precision_after_dot = split_series[1].str.len().max() if split_series.shape[1] > 1 else 0
         return {'precision': max_precision_before_dot + max_precision_after_dot, 'scale': max_precision_after_dot}
     except Exception as e:
-        print(f"Error in float_max_precision_and_scale: {e}")
+        print_log(f"Error in float_max_precision_and_scale: {e}")
         return {'precision': 0, 'scale': 0}
 
 
@@ -367,7 +365,7 @@ def map_dataframe_to_snowflake(df):
             else:
                 column_mappings[column] = "VARIANT"
     except Exception as e:
-        print(f"Error in map_dataframe_to_snowflake: {e}")
+        print_log(f"Error in map_dataframe_to_snowflake: {e}")
     return column_mappings
 
 
@@ -378,7 +376,7 @@ def create_statement_from_df(table_name, df):
         create_statement = f"CREATE OR REPLACE TABLE {table_name} ({columns_definition})"
         return create_statement
     except Exception as e:
-        print(f"Error in create_statement_from_df: {e}")
+        print_log(f"Error in create_statement_from_df: {e}")
         return ""
 
 
@@ -389,4 +387,4 @@ def create_table_df(table_name, df, create_statement=False):
         execute(create_statement)
         insert_df(table_name, df)
     except Exception as e:
-        print(f"Error: {e}")
+        print_log(f"Error: {e}")
