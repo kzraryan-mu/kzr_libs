@@ -3,7 +3,7 @@ import json
 import requests
 
 # Replace with your own access token and repository information
-access_token = "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"
+access_token = "<ACCESS_TOKEN>"
 repo_owner = "Missouri-BMI"
 repo_name = "ShowMeVax"
 project_id = 1
